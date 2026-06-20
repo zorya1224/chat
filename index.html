@@ -199,6 +199,7 @@
                 <button id="session-manager-btn" class="action-btn" title="会话管理"><i class="fas fa-comments"></i></button>
                 <button id="group-chat-btn" class="action-btn" title="群聊设置"><i class="fas fa-users"></i></button>
                 <button id="envelope-header-btn" class="action-btn" title="信箱"><i class="fas fa-envelope-open-text"></i></button>
+                <button id="nav-moments-btn" class="action-btn" title="朋友圈"><i class="fas fa-images"></i></button>
                 <button id="companion-btn" class="action-btn" title="陪伴"><i class="fas fa-hand-holding-heart"></i></button>
                 <button id="daily-greeting-btn" class="action-btn" title="今日公告" onclick="reopenDailyGreeting()"><i class="fas fa-newspaper"></i></button>
                 <button id="settings-btn" class="action-btn" title="设置"><i class="fas fa-cog"></i></button>
@@ -2436,5 +2437,502 @@
     <script src="js/listeners-sticker.js"></script>
     <script src="js/features/companion.js"></script>
     <script src="js/app.js"></script>
+<div id="moments-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color, #fff); z-index: 1000; flex-direction: column; font-family: 'Noto Serif SC', serif; color: var(--text-color, #000);">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px; border-bottom: 1px solid rgba(0,0,0,0.08); background: var(--panel-bg, #f9f9f9);">
+        <button id="close-moments-btn" style="background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-color, #000); display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-chevron-left"></i> 返回</button>
+        <span style="font-weight: bold; font-size: 17px;">朋友圈</span>
+        <button id="moments-setting-toggle" style="background: none; border: none; font-size: 16px; cursor: pointer; color: #576b95;"><i class="fa-solid fa-gear"></i> 设置</button>
+    </div>
+
+    <div style="flex: 1; overflow-y: auto; padding: 0 0 30px 0; position: relative;" id="moments-scroll-body">
+        
+        <div id="moments-config-panel" style="display: none; background: var(--card-bg, #f5f5f5); padding: 15px; border-bottom: 1px solid #ddd; flex-direction: column; gap: 12px;">
+            <h4 style="margin: 0; font-size: 14px; color: #576b95;">⚙️ 朋友圈个性化设置</h4>
+            <div style="font-size: 13px; display: flex; flex-direction: column; gap: 8px;">
+                <div>
+                    <label>对方自动发朋友圈频率 (分钟)：</label><br>
+                    <span style="color:#666">最短:</span> <input type="number" id="cfg-min-time" value="10" style="width: 50px; text-align: center; border: 1px solid #ccc; border-radius: 4px;"> 
+                    <span style="color:#666; margin-left: 10px;">最长:</span> <input type="number" id="cfg-max-time" value="30" style="width: 50px; text-align: center; border: 1px solid #ccc; border-radius: 4px;">
+                </div>
+                <div>
+                    <label>梦角专属朋友圈字卡库 (每行一条动态)：</label>
+                    <textarea id="cfg-char-pool" style="width: 100%; height: 80px; margin-top: 5px; font-size: 12px; border: 1px solid #ccc; border-radius: 4px; padding: 5px; font-family: inherit;">
+今天的阳光很好，忽然想到了你。
+有些话藏在聊天字卡里不够，我还想写在动态里。✦
+刚刚听到一首歌，旋律很像我们平时的感觉。
+如果思念有声音，我想你现在应该觉得很吵吧？
+忙碌一整天，看到你的名字亮起，就是最好的慰藉。</textarea>
+                </div>
+                <div style="display: flex; gap: 15px; margin-top: 5px;">
+                    <label><input type="checkbox" id="cfg-auto-like" checked> 允许梦角为我点赞</label>
+                    <label><input type="checkbox" id="cfg-auto-comment" checked> 允许梦角随机评论我</label>
+                </div>
+                <button id="save-moments-config" style="background: #576b95; color: #fff; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 12px; align-self: flex-end;">保存配置并应用</button>
+            </div>
+        </div>
+
+        <div id="moments-cover-wall" style="position: relative; height: 220px; background: #333; margin-bottom: 40px; background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800'); background-size: cover; background-position: center;">
+            <div id="change-wall-trigger" style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.5); color: #fff; padding: 5px 10px; border-radius: 20px; font-size: 11px; cursor: pointer;">
+                <i class="fa-solid fa-camera"></i> 更换封面
+            </div>
+            <input type="file" id="wall-file-input" accept="image/*" style="display: none;">
+
+            <div style="position: absolute; right: 15px; bottom: -25px; display: flex; align-items: center;">
+                <span style="color: #fff; text-shadow: 1px 1px 4px rgba(0,0,0,0.9); font-weight: bold; margin-right: 12px; font-size: 16px; letter-spacing: 1px;" id="m-user-name">我</span>
+                <img id="m-user-avatar" src="https://file.youtochat.com/images/20260216/1771224856844_qdqqd.jpeg" style="width: 65px; height: 65px; border-radius: 8px; border: 2px solid #fff; object-fit: cover; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+            </div>
+        </div>
+
+        <div style="background: var(--card-bg, #f6f6f6); padding: 15px; border-radius: 12px; margin: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+            <textarea id="m-text-input" placeholder="这一刻的想法..." style="width: 100%; height: 55px; border: none; background: transparent; resize: none; outline: none; font-size: 14px; font-family: inherit; color: var(--text-color, #000);"></textarea>
+            
+            <div id="m-preview-area" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;"></div>
+
+            <div style="display: flex; gap: 10px; margin-top: 8px; font-size: 11px; color: #576b95;">
+                <span id="m-add-location" style="cursor: pointer; background: rgba(87,107,149,0.1); padding: 3px 8px; border-radius: 12px;"><i class="fa-solid fa-location-dot"></i> <span id="lbl-location">所在位置</span></span>
+                <span id="m-add-mention" style="cursor: pointer; background: rgba(87,107,149,0.1); padding: 3px 8px; border-radius: 12px;"><i class="fa-solid fa-at"></i> <span id="lbl-mention">提醒谁看</span></span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 10px;">
+                <input type="file" id="m-media-file" accept="image/*,video/*" style="display: none;">
+                <button id="m-upload-btn" style="background: none; border: none; color: var(--text-color, #555); font-size: 18px; cursor: pointer;"><i class="fa-regular fa-image"></i></button>
+                <button id="m-submit-btn" style="background: #576b95; color: #fff; border: none; padding: 6px 18px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;">发表</button>
+            </div>
+        </div>
+
+        <div id="moments-stream-container" style="display: flex; flex-direction: column; padding: 10px 15px; gap: 25px;">
+            </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 基础DOM绑定
+    const navBtn = document.getElementById('nav-moments-btn');
+    const modal = document.getElementById('moments-modal');
+    const closeBtn = document.getElementById('close-moments-btn');
+    const toggleConfig = document.getElementById('moments-setting-toggle');
+    const configPanel = document.getElementById('moments-config-panel');
+    const saveConfigBtn = document.getElementById('save-moments-config');
+    const wallFileInput = document.getElementById('wall-file-input');
+    const changeWallTrigger = document.getElementById('change-wall-trigger');
+    const coverWall = document.getElementById('moments-cover-wall');
+
+    const mTextInput = document.getElementById('m-text-input');
+    const mMediaFile = document.getElementById('m-media-file');
+    const mUploadBtn = document.getElementById('m-upload-btn');
+    const mPreviewArea = document.getElementById('m-preview-area');
+    const mSubmitBtn = document.getElementById('m-submit-btn');
+    const streamContainer = document.getElementById('moments-stream-container');
+
+    const addLocBtn = document.getElementById('m-add-location');
+    const addMenBtn = document.getElementById('m-add-mention');
+    const lblLocation = document.getElementById('lbl-location');
+    const lblMention = document.getElementById('lbl-mention');
+
+    // 默认内置变量数据
+    let localMomentsData = [];
+    let momentsConfig = {
+        minTime: 10, // 默认最短10分钟
+        maxTime: 30, // 默认最长30分钟
+        pool: ["今天的阳光很好，忽然想到了你。", "有些话藏在聊天字卡里不够，我还想写在动态里。✦", "刚刚听到一首歌，旋律很像我们平时的感觉。"],
+        autoLike: true,
+        autoComment: true,
+        wallUrl: ''
+    };
+    
+    let tempMediaBase64 = ''; 
+    let tempMediaType = '';
+    let selectedLocation = '';
+    let selectedMention = '';
+    let nextTimerId = null;
+
+    // 梦角高仿真评论库（当你发朋友圈时，梦角会在几秒后随机选取一条留评）
+    const charCommentsPool = [
+        "好看！是在暗示我吗？✨",
+        "今天也很想你，悄悄留个爪印。",
+        "捕捉到一只发动态的你。抓走~",
+        "这条动态的含糖量好像有点超标了呢。🫶",
+        "看到了哦，下次带我一起去这里吧。"
+    ];
+
+    // ==========================================
+    // 核心引擎：数据持久化保存（利用原网站localForage）
+    // ==========================================
+    function initStorageAndTimers() {
+        if (typeof localforage !== 'undefined') {
+            // 读取保存的朋友圈配置
+            localforage.getItem('moments_custom_settings').then(val => {
+                if(val) {
+                    momentsConfig = {...momentsConfig, ...val};
+                    // 回填到设置看板
+                    document.getElementById('cfg-min-time').value = momentsConfig.minTime;
+                    document.getElementById('cfg-max-time').value = momentsConfig.maxTime;
+                    document.getElementById('cfg-char-pool').value = momentsConfig.pool.join('\n');
+                    document.getElementById('cfg-auto-like').checked = momentsConfig.autoLike;
+                    document.getElementById('cfg-auto-comment').checked = momentsConfig.autoComment;
+                    if(momentsConfig.wallUrl) coverWall.style.backgroundImage = `url('${momentsConfig.wallUrl}')`;
+                }
+                // 启动梦角朋友圈自动发送定时驱动
+                planNextDreamPost();
+            });
+
+            // 读取保存的朋友圈历史列表
+            localforage.getItem('moments_history_records').then(list => {
+                if(list && Array.isArray(list)) {
+                    localMomentsData = list;
+                    renderAllMoments();
+                } else {
+                    // 初始默认给一条
+                    insertInitialSample();
+                }
+            });
+        } else {
+            insertInitialSample();
+            planNextDreamPost();
+        }
+    }
+
+    function saveHistoryToLocal() {
+        if (typeof localforage !== 'undefined') {
+            localforage.setItem('moments_history_records', localMomentsData);
+        }
+    }
+
+    // ==========================================
+    // 梦角自动发朋友圈时间间隔控制器逻辑
+    // ==========================================
+    function planNextDreamPost() {
+        if(nextTimerId) clearTimeout(nextTimerId);
+        
+        // 计算随机间隔（分钟转为毫秒数）
+        const minMs = momentsConfig.minTime * 60 * 1000;
+        const maxMs = momentsConfig.maxTime * 60 * 1000;
+        const randomDelay = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+        
+        console.log(`[朋友圈系统] 梦角计划在 ${(randomDelay/1000/60).toFixed(1)} 分钟后自动发表一篇新字卡动态。`);
+        
+        nextTimerId = setTimeout(() => {
+            triggerDreamPostAutomated();
+            planNextDreamPost(); // 循环计划下一条
+        }, randomDelay);
+    }
+
+    // 梦角发朋友圈动作执行器
+    function triggerDreamPostAutomated() {
+        let charName = "梦角";
+        let charAvatar = "https://file.youtochat.com/images/20260216/1771224856844_qdqqd.jpeg";
+        try {
+            charName = document.querySelector('.header-info .char-name')?.innerText || "梦角";
+            charAvatar = document.querySelector('.header-avatar img')?.src || charAvatar;
+        } catch(e) {}
+
+        const textPool = momentsConfig.pool.length > 0 ? momentsConfig.pool : ["✦ 我们的故事，写在风里。"];
+        const randomText = textPool[Math.floor(Math.random() * textPool.length)];
+
+        const newMoment = {
+            id: 'moment_' + Date.now(),
+            name: charName,
+            avatar: charAvatar,
+            text: randomText,
+            media: '',
+            mediaType: '',
+            location: '',
+            mention: '',
+            time: '刚刚',
+            likes: [],
+            comments: [],
+            isChar: true
+        };
+
+        localMomentsData.unshift(newMoment);
+        saveHistoryToLocal();
+        renderAllMoments();
+    }
+
+    // ==========================================
+    // 互动区核心逻辑（点赞、评论、发表）
+    // ==========================================
+    
+    // 打开/关闭大面板与属性数据实时抓取同步
+    if(navBtn) navBtn.addEventListener('click', () => {
+        try {
+            const globalUserNick = document.querySelector('.header-info .user-name')?.innerText || "我";
+            const globalUserAvatar = document.querySelector('.header-avatar img')?.src;
+            if(globalUserNick) document.getElementById('m-user-name').innerText = globalUserNick;
+            if(globalUserAvatar) document.getElementById('m-user-avatar').src = globalUserAvatar;
+        } catch(e) {}
+        modal.style.display = 'flex';
+    });
+    closeBtn.addEventListener('click', () => modal.style.display = 'none');
+    toggleConfig.addEventListener('click', () => configPanel.style.display = configPanel.style.display === 'none' ? 'flex' : 'none');
+
+    // 保存设置按钮
+    saveConfigBtn.addEventListener('click', () => {
+        momentsConfig.minTime = parseFloat(document.getElementById('cfg-min-time').value) || 10;
+        momentsConfig.maxTime = parseFloat(document.getElementById('cfg-max-time').value) || 30;
+        momentsConfig.autoLike = document.getElementById('cfg-auto-like').checked;
+        momentsConfig.autoComment = document.getElementById('cfg-auto-comment').checked;
+        
+        const areaText = document.getElementById('cfg-char-pool').value;
+        momentsConfig.pool = areaText.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+
+        if(typeof localforage !== 'undefined') {
+            localforage.setItem('moments_custom_settings', momentsConfig);
+        }
+        configPanel.style.display = 'none';
+        alert('朋友圈参数保存成功！梦角发帖时钟已重置。');
+        planNextDreamPost();
+    });
+
+    // 本地更换背景墙墙面图片
+    changeWallTrigger.addEventListener('click', () => wallFileInput.click());
+    wallFileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64Url = e.target.result;
+            coverWall.style.backgroundImage = `url('${base64Url}')`;
+            momentsConfig.wallUrl = base64Url;
+            if(typeof localforage !== 'undefined') {
+                localforage.setItem('moments_custom_settings', momentsConfig);
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // 定位与提到谁模拟弹窗
+    addLocBtn.addEventListener('click', () => {
+        let res = prompt("请输入你想模拟的定位/打卡地点 (留空则取消)：", selectedLocation);
+        if(res !== null) {
+            selectedLocation = res.trim();
+            lblLocation.innerText = selectedLocation ? selectedLocation : "所在位置";
+        }
+    });
+    addMenBtn.addEventListener('click', () => {
+        let res = prompt("你想提到谁？(例如输入: 梦角名称 / 所有人)：", selectedMention);
+        if(res !== null) {
+            selectedMention = res.trim();
+            lblMention.innerText = selectedMention ? "@ " + selectedMention : "提醒谁看";
+        }
+    });
+
+    // 选图发动态文件读取
+    mUploadBtn.addEventListener('click', () => mMediaFile.click());
+    mMediaFile.addEventListener('change', function() {
+        const file = this.files[0];
+        if(!file) return;
+        
+        tempMediaType = file.type.startsWith('video/') ? 'video' : 'image';
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            tempMediaBase64 = e.target.result;
+            mPreviewArea.innerHTML = `<div style="position:relative;"><${tempMediaType==='video'?'video':'img'} src="${tempMediaBase64}" style="max-width:90px; max-height:90px; border-radius:4px; object-fit:cover;"></${tempMediaType==='video'?'video':'img'}><span id="m-del-preview" style="position:absolute;-top:5px;-right:5px;background:rgba(0,0,0,0.6);color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;">×</span></div>`;
+            document.getElementById('m-del-preview').addEventListener('click', () => {
+                mPreviewArea.innerHTML = ''; tempMediaBase64 = ''; tempMediaType = ''; mMediaFile.value = '';
+            });
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // 发送我自己的朋友圈
+    mSubmitBtn.addEventListener('click', () => {
+        const txt = mTextInput.value.trim();
+        if(!txt && !tempMediaBase64) return;
+
+        let myName = document.getElementById('m-user-name').innerText;
+        let myAvatar = document.getElementById('m-user-avatar').src;
+
+        const mid = 'moment_' + Date.now();
+        const newRecord = {
+            id: mid,
+            name: myName,
+            avatar: myAvatar,
+            text: txt,
+            media: tempMediaBase64,
+            mediaType: tempMediaType,
+            location: selectedLocation,
+            mention: selectedMention,
+            time: '刚刚',
+            likes: [],
+            comments: [],
+            isChar: false
+        };
+
+        localMomentsData.unshift(newRecord);
+        saveHistoryToLocal();
+        renderAllMoments();
+
+        // 打扫输入状态框
+        mTextInput.value = ''; mPreviewArea.innerHTML = ''; tempMediaBase64 = ''; tempMediaType = ''; mMediaFile.value = '';
+        selectedLocation = ''; selectedMention = ''; lblLocation.innerText = "所在位置"; lblMention.innerText = "提醒谁看";
+
+        // 【彩蛋触发】：梦角在 3~6 秒后随机跑过来点赞或留评
+        executeCharFeedbackEcho(mid);
+    });
+
+    function executeCharFeedbackEcho(momentId) {
+        if(!momentsConfig.autoLike && !momentsConfig.autoComment) return;
+        
+        const randomTriggerSec = (Math.floor(Math.random() * 4) + 3) * 1000;
+        setTimeout(() => {
+            let index = localMomentsData.findIndex(item => item.id === momentId);
+            if(index === -1) return;
+
+            let charName = "梦角";
+            try { charName = document.querySelector('.header-info .char-name')?.innerText || "梦角"; } catch(e) {}
+
+            // 执行点赞
+            if(momentsConfig.autoLike) {
+                if(!localMomentsData[index].likes.includes(charName)) localMomentsData[index].likes.push(charName);
+            }
+            // 执行评论
+            if(momentsConfig.autoComment) {
+                const randomCommentText = charCommentsPool[Math.floor(Math.random() * charCommentsPool.length)];
+                localMomentsData[index].comments.push({
+                    author: charName,
+                    replyTo: '',
+                    content: randomCommentText
+                });
+            }
+
+            saveHistoryToLocal();
+            renderAllMoments();
+        }, randomTriggerSec);
+    }
+
+    // ==========================================
+    // 渲染排版器驱动
+    // ==========================================
+    function renderAllMoments() {
+        streamContainer.innerHTML = '';
+        
+        let globalCharName = "梦角";
+        try { globalCharName = document.querySelector('.header-info .char-name')?.innerText || "梦角"; } catch(e) {}
+
+        localMomentsData.forEach(item => {
+            const div = document.createElement('div');
+            div.style.cssText = "display: flex; gap: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 18px; position: relative;";
+            
+            // 拼接媒体代码
+            let mediaHtml = '';
+            if(item.media) {
+                if(item.mediaType === 'video') {
+                    mediaHtml = `<div style="margin-top:8px;"><video src="${item.media}" controls style="max-width:85%; max-height:220px; border-radius:6px; background:#000;"></video></div>`;
+                } else {
+                    mediaHtml = `<div style="margin-top:8px;"><img src="${item.media}" style="max-width:70%; max-height:220px; border-radius:6px; object-fit:cover; cursor:pointer;" onclick="window.open(this.src)"></div>`;
+                }
+            }
+
+            // 拼接附加位置标签与Mention标签
+            let extraBadges = '';
+            if(item.location) extraBadges += `<div style="color:#576b95; font-size:12px; margin-top:6px;"><i class="fa-solid fa-location-dot"></i> ${item.location}</div>`;
+            if(item.mention) extraBadges += `<div style="color:#e91e63; font-size:11px; margin-top:4px;"><i class="fa-solid fa-at"></i> 提到了 ${item.mention}</div>`;
+
+            // 拼接点赞心愿单与评论内容流区
+            let likeBoxHtml = '';
+            if(item.likes && item.likes.length > 0) {
+                likeBoxHtml = `<div style="padding: 5px 8px; border-bottom: ${item.comments.length>0?'1px solid rgba(0,0,0,0.04)':'none'}; color:#576b95; font-size:12px; display:flex; align-items:center; gap:5px;"><i class="fa-regular fa-heart" style="font-size:11px;"></i> <b>${item.likes.join(', ')}</b></div>`;
+            }
+
+            let commentBoxHtml = '';
+            if(item.comments && item.comments.length > 0) {
+                commentBoxHtml = `<div style="padding: 5px 8px; display:flex; flex-direction:column; gap:4px; font-size:13px; line-height:1.4;">`;
+                item.comments.forEach(c => {
+                    commentBoxHtml += `<div><span style="color:#576b95; font-weight:bold;">${c.author}:</span> <span style="color:var(--text-color,#111)">${c.content}</span></div>`;
+                });
+                commentBoxHtml += `</div>`;
+            }
+
+            let interactBlock = '';
+            if(likeBoxHtml || commentBoxHtml) {
+                interactBlock = `<div style="margin-top:10px; background: var(--card-bg, #f4f4f4); border-radius: 4px; border: 1px solid rgba(0,0,0,0.02);">${likeBoxHtml}${commentBoxHtml}</div>`;
+            }
+
+            div.innerHTML = `
+                <img src="${item.avatar}" style="width: 42px; height: 42px; border-radius: 5px; object-fit: cover; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                <div style="flex: 1;">
+                    <div style="color: #576b95; font-weight: bold; font-size: 14px; margin-bottom: 4px;">${item.name}</div>
+                    <div style="font-size: 14.5px; line-height: 1.5; color: var(--text-color, #000); white-space: pre-wrap; letter-spacing:0.3px;">${item.text}</div>
+                    ${mediaHtml}
+                    ${extraBadges}
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                        <span style="font-size: 12px; color: #999;">${item.time}</span>
+                        <div style="display:flex; gap:12px;">
+                            <span class="action-like-trigger" data-id="${item.id}" style="font-size: 13px; color:#576b95; cursor:pointer;"><i class="fa-solid fa-heart"></i> 点赞</span>
+                            <span class="action-comment-trigger" data-id="${item.id}" style="font-size: 13px; color:#576b95; cursor:pointer;"><i class="fa-solid fa-comment"></i> 评论</span>
+                        </div>
+                    </div>
+                    ${interactBlock}
+                </div>
+                <span class="action-delete-moment" data-id="${item.id}" style="position:absolute; top:0; right:0; color:#ccc; font-size:12px; cursor:pointer; padding:2px;"><i class="fa-solid fa-trash-can"></i></span>
+            `;
+            streamContainer.appendChild(div);
+        });
+
+        // 挂载动态元素内的交互事件监听（点赞，评论，删除）
+        document.querySelectorAll('.action-like-trigger').forEach(el => {
+            el.addEventListener('click', function() {
+                const mid = this.getAttribute('data-id');
+                let idx = localMomentsData.findIndex(item => item.id === mid);
+                if(idx === -1) return;
+                let myName = document.getElementById('m-user-name').innerText;
+                if(localMomentsData[idx].likes.includes(myName)) {
+                    localMomentsData[idx].likes = localMomentsData[idx].likes.filter(n => n !== myName);
+                } else {
+                    localMomentsData[idx].likes.push(myName);
+                }
+                saveHistoryToLocal(); renderAllMoments();
+            });
+        });
+
+        document.querySelectorAll('.action-comment-trigger').forEach(el => {
+            el.addEventListener('click', function() {
+                const mid = this.getAttribute('data-id');
+                let idx = localMomentsData.findIndex(item => item.id === mid);
+                if(idx === -1) return;
+                let msg = prompt("请输入你的评论内容：");
+                if(msg && msg.trim()) {
+                    let myName = document.getElementById('m-user-name').innerText;
+                    localMomentsData[idx].comments.push({
+                        author: myName, replyTo: '', content: msg.trim()
+                    });
+                    saveHistoryToLocal(); renderAllMoments();
+                }
+            });
+        });
+
+        document.querySelectorAll('.action-delete-moment').forEach(el => {
+            el.addEventListener('click', function() {
+                if(confirm("确定删除这条朋友圈动态吗？")) {
+                    const mid = this.getAttribute('data-id');
+                    localMomentsData = localMomentsData.filter(item => item.id !== mid);
+                    saveHistoryToLocal(); renderAllMoments();
+                }
+            });
+        });
+    }
+
+    function insertInitialSample() {
+        localMomentsData = [{
+            id: 'sample_0',
+            name: "梦角守护系统",
+            avatar: "https://file.youtochat.com/images/20260216/1771224856844_qdqqd.jpeg",
+            text: "欢迎开启属于我们的朋友圈小世界。点击右上角设置可以修改专属的字卡刷新时间与内容库哦。✦",
+            media: '', mediaType: '', location: '星海彼岸', mention: '你',
+            time: '1分钟前', likes: ["系统管理员"],
+            comments: [{author:"系统说明", replyTo:"", content:"快上传你喜欢的文件、照片，或者测试发一段视频吧！"}],
+            isChar: true
+        }];
+        saveHistoryToLocal();
+        renderAllMoments();
+    }
+
+    // 初始化运行
+    initStorageAndTimers();
+});
+</script>
+
 </body>
 </html>
