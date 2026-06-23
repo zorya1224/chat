@@ -2618,22 +2618,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }, randomDelay);
     }
 
-    // 梦角发朋友圈动作执行器
+        // 梦角发朋友圈动作执行器
     function triggerDreamPostAutomated() {
+        // 实时抓取聊天界面当前生效的梦角名字和头像
         let charName = "梦角";
-        let charAvatar = "https://file.youtochat.com/images/20260216/1771224856844_qdqqd.jpeg";
+        let charAvatar = "https://file.youtochat.com/images/20260216/1771224856844_qdqqd.jpeg"; // 兜底图
+        
         try {
-            charName = document.querySelector('.header-info .char-name')?.innerText || "梦角";
-            charAvatar = document.querySelector('.header-avatar img')?.src || charAvatar;
-        } catch(e) {}
+            // 抓取聊天页顶部的梦角名字
+            const topCharName = document.querySelector('.header-info .char-name')?.innerText 
+                             || document.querySelector('#char-name')?.innerText 
+                             || document.querySelector('.char-title')?.innerText;
+            if(topCharName) charName = topCharName.trim();
+
+            // 抓取聊天页顶部的梦角头像
+            const topCharAvatar = document.querySelector('.header-avatar img')?.src 
+                               || document.querySelector('#char-avatar img')?.src 
+                               || document.querySelector('.avatar img')?.src;
+            if(topCharAvatar) charAvatar = topCharAvatar;
+        } catch(e) {
+            console.log("抓取梦角头像名字失败，使用默认值", e);
+        }
 
         const textPool = momentsConfig.pool.length > 0 ? momentsConfig.pool : ["✦ 我们的故事，写在风里。"];
         const randomText = textPool[Math.floor(Math.random() * textPool.length)];
 
         const newMoment = {
             id: 'moment_' + Date.now(),
-            name: charName,
-            avatar: charAvatar,
+            name: charName,       // 使用实时抓取的名字
+            avatar: charAvatar,   // 使用实时抓取的头像
             text: randomText,
             media: '',
             mediaType: '',
@@ -2772,7 +2785,7 @@ document.addEventListener('DOMContentLoaded', function() {
         executeCharFeedbackEcho(mid);
     });
 
-    function executeCharFeedbackEcho(momentId) {
+        function executeCharFeedbackEcho(momentId) {
         if(!momentsConfig.autoLike && !momentsConfig.autoComment) return;
         
         const randomTriggerSec = (Math.floor(Math.random() * 4) + 3) * 1000;
@@ -2780,8 +2793,14 @@ document.addEventListener('DOMContentLoaded', function() {
             let index = localMomentsData.findIndex(item => item.id === momentId);
             if(index === -1) return;
 
+            // 实时抓取当前最新的梦角名字
             let charName = "梦角";
-            try { charName = document.querySelector('.header-info .char-name')?.innerText || "梦角"; } catch(e) {}
+            try { 
+                const topCharName = document.querySelector('.header-info .char-name')?.innerText 
+                                 || document.querySelector('#char-name')?.innerText 
+                                 || document.querySelector('.char-title')?.innerText;
+                if(topCharName) charName = topCharName.trim();
+            } catch(e) {}
 
             // 执行点赞
             if(momentsConfig.autoLike) {
@@ -2791,8 +2810,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if(momentsConfig.autoComment) {
                 const randomCommentText = charCommentsPool[Math.floor(Math.random() * charCommentsPool.length)];
                 localMomentsData[index].comments.push({
-                    author: charName,
-                    replyTo: '',
+                    author: charName, // 使用实时抓取的名字
+                    replyTo: '', 
                     content: randomCommentText
                 });
             }
