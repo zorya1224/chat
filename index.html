@@ -2760,7 +2760,7 @@ if(navBtn) navBtn.addEventListener('click', () => {
         const reader = new FileReader();
         reader.onload = function(e) {
             tempMediaBase64 = e.target.result;
-            mPreviewArea.innerHTML = `<div style="position:relative;"><${tempMediaType==='video'?'video':'img'} src="${tempMediaBase64}" style="max-width:90px; max-height:90px; border-radius:4px; object-fit:cover;"></${tempMediaType==='video'?'video':'img'}><span id="m-del-preview" style="position:absolute;-top:5px;-right:5px;background:rgba(0,0,0,0.6);color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;">×</span></div>`;
+            mPreviewArea.innerHTML = `<div style="position:relative;"><${tempMediaType==='video'?'video':'img'} src="${tempMediaBase64}" style="max-width:90px; max-height:90px; border-radius:4px; object-fit:cover;"></${tempMediaType==='video'?'video':'img'}><span id="m-del-preview" style="position:absolute; top:-5px; right:-5px; background:rgba(0,0,0,0.6); color:#fff; border-radius:50%; width:16px; height:16px; display:flex; align-items:center; justify-content:center; font-size:10px; cursor:pointer;">×</span></div>`;
             document.getElementById('m-del-preview').addEventListener('click', () => {
                 mPreviewArea.innerHTML = ''; tempMediaBase64 = ''; tempMediaType = ''; mMediaFile.value = '';
             });
@@ -2857,7 +2857,7 @@ if(navBtn) navBtn.addEventListener('click', () => {
                 if(item.mediaType === 'video') {
                     mediaHtml = `<div style="margin-top:8px;"><video src="${item.media}" controls style="max-width:85%; max-height:220px; border-radius:6px; background:#000;"></video></div>`;
                 } else {
-                    mediaHtml = `<div style="margin-top:8px;"><img src="${item.media}" style="max-width:70%; max-height:220px; border-radius:6px; object-fit:cover; cursor:pointer;" onclick="window.open(this.src)"></div>`;
+                    mediaHtml = `<div style="margin-top:8px;"><img src="${item.media}" style="max-width:70%; max-height:220px; border-radius:6px; object-fit:cover;"></div>`;
                 }
             }
 
