@@ -2894,7 +2894,7 @@ if(navBtn) navBtn.addEventListener('click', () => {
                     ${mediaHtml}
                     ${extraBadges}
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                        <span style="font-size: 12px; color: #999;">${item.time}</span>
+                        <span style="font-size: 12px; color: #999;">${item.time === '刚刚' ? (function(ts){ let d = new Date(ts); return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); })(parseInt(item.id.split('_')[1])) : item.time}</span>
                         <div style="display:flex; gap:12px;">
                             <span class="action-like-trigger" data-id="${item.id}" style="font-size: 13px; color:#576b95; cursor:pointer;"><i class="fa-solid fa-heart"></i> 点赞</span>
                             <span class="action-comment-trigger" data-id="${item.id}" style="font-size: 13px; color:#576b95; cursor:pointer;"><i class="fa-solid fa-comment"></i> 评论</span>
