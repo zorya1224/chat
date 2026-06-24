@@ -2438,6 +2438,9 @@
     <script src="js/features/companion.js"></script>
     <script src="js/app.js"></script>
 <div id="moments-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color, #fff); z-index: 1000; flex-direction: column; font-family: 'Noto Serif SC', serif; color: var(--text-color, #000);">
+    <div id="moments-img-viewer" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1002; align-items: center; justify-content: center; cursor: zoom-out;">
+    <img id="moments-viewer-img" src="" style="max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 0 20px rgba(0,0,0,0.5);">
+</div>
     <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px; border-bottom: 1px solid rgba(0,0,0,0.08); background: var(--panel-bg, #f9f9f9);">
         <button id="close-moments-btn" style="background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-color, #000); display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-chevron-left"></i> 返回</button>
         <span style="font-weight: bold; font-size: 17px;">朋友圈</span>
@@ -2841,6 +2844,25 @@ if(navBtn) navBtn.addEventListener('click', () => {
     // ==========================================
     // 渲染排版器驱动
     // ==========================================
+    // 打开朋友圈图片全屏预览
+function openMomentsImageViewer(imgSrc) {
+    const viewer = document.getElementById('moments-img-viewer');
+    const viewerImg = document.getElementById('moments-viewer-img');
+    if (viewer && viewerImg) {
+        viewerImg.src = imgSrc;
+        viewer.style.display = 'flex';
+    }
+}
+
+// 页面加载完成后，绑定“点击黑底任意地方自动关闭预览”的事件
+document.addEventListener('DOMContentLoaded', function() {
+    const viewer = document.getElementById('moments-img-viewer');
+    if (viewer) {
+        viewer.addEventListener('click', function() {
+            viewer.style.display = 'none';
+        });
+    }
+});
     function renderAllMoments() {
         streamContainer.innerHTML = '';
         
@@ -2857,7 +2879,7 @@ if(navBtn) navBtn.addEventListener('click', () => {
                 if(item.mediaType === 'video') {
                     mediaHtml = `<div style="margin-top:8px;"><video src="${item.media}" controls style="max-width:85%; max-height:220px; border-radius:6px; background:#000;"></video></div>`;
                 } else {
-                    mediaHtml = `<div style="margin-top:8px;"><img src="${item.media}" style="max-width:70%; max-height:220px; border-radius:6px; object-fit:cover;"></div>`;
+                    mediaHtml = `<div style="margin-top:8px;"><img src="${item.media}" style="max-width:70%; max-height:220px; border-radius:6px; object-fit:cover; cursor: zoom-in;" onclick="openMomentsImageViewer(this.src)"></div>`;
                 }
             }
 
